@@ -20,4 +20,4 @@ def generate_response(prompt: str) -> str:
 
 if __name__ == "__main__":
     reply = generate_response("Tell me a fun fact about AI.")
-    print("🤖 GPT says:", reply)
+    print("GPT says:", reply)

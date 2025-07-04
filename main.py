@@ -6,11 +6,11 @@ def main():
     # 1. Record + transcribe
     audio = record_audio(duration=7)
     text = transcribe_audio(audio)
-    print("📝 You said:", text)
+    print("You said:", text)
 
     # 2. LLM generates reply
     reply = generate_response(text)
-    print("🤖 GPT says:", reply)
+    print("GPT says:", reply)
 
     # 3. Convert to TTS
     speak_text(reply)

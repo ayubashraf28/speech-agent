@@ -34,15 +34,14 @@ def speak_text(text: str):
         try:
             temp.write(response.content)
             temp.flush()
-            temp.close()   # make sure file is closed before loading
-            # Play using pygame
+            temp.close()   
             pygame.mixer.init()
             pygame.mixer.music.load(temp.name)
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy():
                 continue
         finally:
-            # Now it is safe to delete
+            
             os.unlink(temp.name)
     else:
         print(f"Error: {response.status_code} - {response.text}")
