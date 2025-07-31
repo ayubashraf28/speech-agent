@@ -1,0 +1,10 @@
+0.0s - 1.9s: Speaker SPEAKER_01
+1.8s - 3.5s: Speaker SPEAKER_00
+3.4s - 11.3s: Speaker SPEAKER_01
+11.3s - 14.0s: Speaker SPEAKER_00
+13.9s - 19.7s: Speaker SPEAKER_02
+18.7s - 20.9s: Speaker SPEAKER_00
+20.9s - 26.2s: Speaker SPEAKER_02
+26.2s - 58.5s: Speaker SPEAKER_00
+34.6s - 34.6s: Speaker SPEAKER_01
+39.3s - 39.4s: Speaker SPEAKER_01

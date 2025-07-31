@@ -3,3 +3,10 @@ whisper
 requests
 pygame
 python-dotenv
+
+# Diarization dependencies
+torch
+torchaudio
+transformers
+pyannote.audio
+

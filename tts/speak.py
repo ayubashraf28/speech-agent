@@ -31,18 +31,22 @@ def speak_text(text: str):
 
     if response.status_code == 200 and len(response.content) > 0:
         temp = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+        temp.write(response.content)
+        temp.flush()
+        temp.close()
+
         try:
-            temp.write(response.content)
-            temp.flush()
-            temp.close()   
             pygame.mixer.init()
             pygame.mixer.music.load(temp.name)
             pygame.mixer.music.play()
             while pygame.mixer.music.get_busy():
-                continue
+                pygame.time.wait(100)  # Let pygame breathe
         finally:
-            
-            os.unlink(temp.name)
+            pygame.mixer.quit()
+            try:
+                os.unlink(temp.name)
+            except PermissionError:
+                print("Warning: Could not delete temp file — it was still in use.")
     else:
         print(f"Error: {response.status_code} - {response.text}")
 
