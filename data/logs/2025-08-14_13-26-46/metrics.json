@@ -1,0 +1,33 @@
+{
+  "started_at": "2025-08-14_13-26-46",
+  "platform": {
+    "system": "Windows",
+    "release": "10",
+    "python": "3.9.0",
+    "device": "cuda"
+  },
+  "models": {
+    "whisper": "medium",
+    "llm": "gpt-3.5-turbo",
+    "tts": "OYTbf65OHHFELVut7v2H/eleven_flash_v2"
+  },
+  "timings": {
+    "acquire_s": 0.009,
+    "diarize_s": 360.503,
+    "asr_s": 4.913,
+    "llm_s": 1.71,
+    "tts_s": 12.044
+  },
+  "meta": {
+    "transcript_chars": 1201,
+    "reply_chars": 184
+  },
+  "context": {
+    "participants": [
+      "SPEAKER_00",
+      "SPEAKER_01",
+      "SPEAKER_02"
+    ],
+    "last_speaker": "SPEAKER_00"
+  }
+}

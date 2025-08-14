@@ -1,0 +1,6 @@
+[SPEAKER_02 0000.2–0006.3] Hi there. Can you help me figure out a good place to grab lunch around here in Oxford Street London? Oh.
+[SPEAKER_00 0006.0–0010.8] And maybe also tell us if there are any vegetarian options?
+[SPEAKER_03 0010.5–0013.8] By the way, how do you usually pick a place to eat?
+[SPEAKER_00 0014.2–0018.7] And while you're at it, can you share a quick fun fact about this city?
+[SPEAKER_01 0019.0–0022.5] One last thing, what's the weather looking like today?
+[SPEAKER_00 0022.6–0026.2] Yeah, and maybe suggest something fun we could do if it's sunny.

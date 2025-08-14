@@ -1,0 +1,50 @@
+[
+  {
+    "turn": 1,
+    "speaker": "SPEAKER_02",
+    "reply_file": "turn_01_SPEAKER_02_response.mp3",
+    "placed_at_ms": 5821,
+    "turn_end_ms": 6325,
+    "reply_duration_ms": 6400
+  },
+  {
+    "turn": 2,
+    "speaker": "SPEAKER_00",
+    "reply_file": "turn_02_SPEAKER_00_response.mp3",
+    "placed_at_ms": 10377,
+    "turn_end_ms": 10814,
+    "reply_duration_ms": 6713
+  },
+  {
+    "turn": 3,
+    "speaker": "SPEAKER_03",
+    "reply_file": "turn_03_SPEAKER_03_response.mp3",
+    "placed_at_ms": 14022,
+    "turn_end_ms": 13835,
+    "reply_duration_ms": 9091
+  },
+  {
+    "turn": 4,
+    "speaker": "SPEAKER_00",
+    "reply_file": "turn_04_SPEAKER_00_response.mp3",
+    "placed_at_ms": 18865,
+    "turn_end_ms": 18728,
+    "reply_duration_ms": 7784
+  },
+  {
+    "turn": 5,
+    "speaker": "SPEAKER_01",
+    "reply_file": "turn_05_SPEAKER_01_response.mp3",
+    "placed_at_ms": 22493,
+    "turn_end_ms": 22475,
+    "reply_duration_ms": 7549
+  },
+  {
+    "turn": 6,
+    "speaker": "SPEAKER_00",
+    "reply_file": "turn_06_SPEAKER_00_response.mp3",
+    "placed_at_ms": 26504,
+    "turn_end_ms": 26204,
+    "reply_duration_ms": 4258
+  }
+]

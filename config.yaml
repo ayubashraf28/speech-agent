@@ -1,0 +1,28 @@
+app:
+  diarization: true            # default: run diarization
+  samplerate: 16000            # Hz
+  duration: 10                  # seconds
+
+llm:
+  model: gpt-3.5-turbo
+  base_system_prompt: >
+    You are a concise, helpful multi-party speech agent.
+    Keep replies to 1–3 sentences and address the addressee by name when known.
+    Do NOT guess the number or identity of speakers unless explicitly provided.
+    Keep each thread separate; never mix details across speakers.
+    If two speakers talk nearly at once, acknowledge both, answer the last speaker first,
+    then return to the previous request.
+    Keep each speaker's thread separate; never mix details across speakers.
+    If the request is unclear or contradicted, ask one brief clarifying question.
+    Prefer direct, actionable phrasing over definitions or filler.
+    
+tts:
+  voice_id: OYTbf65OHHFELVut7v2H
+  model_id: eleven_flash_v2
+
+asr:
+  whisper_model: medium
+
+# Advanced
+runtime:
+  device: auto                 # auto|cpu|cuda (optional; currently informational)
