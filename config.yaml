@@ -4,7 +4,7 @@ app:
   duration: 10                  # seconds
 
 llm:
-  model: gpt-3.5-turbo
+  model: gpt-4o-mini
   base_system_prompt: >
     You are a concise, helpful multi-party speech agent.
     Keep replies to 1–3 sentences and address the addressee by name when known.
