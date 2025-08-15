@@ -1,0 +1,10 @@
+timestamp,audio,label,sim,text,reply
+2025-08-14_21-59-55,utter_2025-08-14_21-59-55.wav,Guest-1,1.000,I will like everything about you.,"Guest-1, could you clarify what specific information or aspect you would like to know about?"
+2025-08-14_22-00-14,utter_2025-08-14_22-00-14.wav,Guest-1,0.847,"Hi, I'm a chef. I need some help working on a sprint to do my match.","Guest-1, could you clarify what specific assistance you need for your sprint? Are you looking for recipe ideas, time management tips, or something else?"
+2025-08-14_22-00-26,utter_2025-08-14_22-00-26.wav,Guest-1,0.821,"That's nice, did it cool down then.","Guest-1, could you clarify what you are referring to? Are you asking about the weather or something else?"
+2025-08-14_22-00-35,utter_2025-08-14_22-00-35.wav,Guest-1,0.696,Okay.,"Guest-1, how can I assist you today?"
+2025-08-14_22-04-21,utter_2025-08-14_22-04-21.wav,Asked,1.000,I am asked to help you to set up a sprint to do my maths.,"Asked, Could you clarify what specific tasks or goals you want to achieve in your math sprint?"
+2025-08-14_22-04-36,utter_2025-08-14_22-04-36.wav,Asked,0.857,"Okay, it makes sense.","Asked, what specific tasks or goals do you want to focus on for your math sprint?"
+2025-08-14_22-04-50,utter_2025-08-14_22-04-50.wav,Ashraf,1.000,and my name is Ashraf.,"Ashraf, Nice to meet you, Ashraf! How can I assist you today?"
+2025-08-14_22-05-06,utter_2025-08-14_22-05-06.wav,Asked,0.929,I just need to know what are the most important subjects in maths that I need to learn to learn artificial intelligence.,"Asked, the most important math subjects for learning artificial intelligence include linear algebra, calculus, probability and statistics, and discrete mathematics. Would you like to focus on any specific area among these?"
+2025-08-14_22-05-17,utter_2025-08-14_22-05-17.wav,Asked,0.852,what you learn in the linear algebra.,"Asked, in linear algebra, you typically learn about vectors, matrices, systems of linear equations, vector spaces, eigenvalues, and eigenvectors. Are you interested in any particular topic within linear algebra?"

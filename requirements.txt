@@ -14,3 +14,10 @@ pydub
 transformers>=4.30.0
 pyannote.audio==3.3.2
 numpy==1.26.4
+resemblyzer==0.1.1.dev0
+librosa==0.9.2        
+webrtcvad==2.0.10
+playsound==1.2.2 
+gTTS 
+pyttsx3 
+pypiwin32      
