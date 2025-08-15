@@ -1,0 +1,23 @@
+{
+  "num_utterances": 24,
+  "num_with_truth": 24,
+  "speaker_id_accuracy": 0.0,
+  "unknown_prediction_rate": 0.0,
+  "stability_labels_per_true": {
+    "1": 2
+  },
+  "latency_summary_ms": {
+    "count": 22,
+    "mean_ms": 2967.1,
+    "median_ms": 2022.9,
+    "p90_ms": 6228.6,
+    "min_ms": 739.0,
+    "max_ms": 7112.1
+  },
+  "confusion": {
+    "1": {
+      "Ryan": 13,
+      "Alex": 11
+    }
+  }
+}
