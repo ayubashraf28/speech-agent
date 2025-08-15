@@ -2,8 +2,10 @@
 Real-time speech agent (non-blocking):
 - InputStream with callback -> Queue (no blocking in calibration or loop)
 - Simple RMS VAD (frame_ms, end_silence_ms)
-- Optional speaker labeling (--spk-id) via utils.speaker_id (Resemblyzer)
+- Optional speaker labeling (--spk-id) via utils.speaker_id (Resemblyzer/MFCC)
+- Per-speaker short-term memory (utils.memory.SpeakerMemory)
 - Transcribe -> LLM -> (optional) TTS
+- Speaker DB persistence: --speaker-db, --reset-speakers, --list-speakers
 """
 
 import argparse
@@ -13,7 +15,7 @@ import signal
 import time
 import wave
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import List, Optional
 
 import numpy as np
 import sounddevice as sd
@@ -22,8 +24,8 @@ from config import load_config
 from asr.transcribe import transcribe_file
 from llm.generate import generate_response
 from tts.speak import speak_text
+from utils.memory import SpeakerMemory
 
-# Optional speaker-ID
 try:
     from utils.speaker_id import SpeakerID
 except Exception:
@@ -71,41 +73,12 @@ def rms(x: np.ndarray) -> float:
     return float(np.sqrt(np.mean(np.square(x.astype(np.float32)))))
 
 
-# -------- Safer name-claim extractor (prevents "I'm looking..." → "Looking") --------
-_NAME_STOPWORDS = {
-    "looking", "going", "doing", "working", "writing", "planning", "thinking", "asking",
-    "needing", "nothing", "something", "anything", "everything", "morning", "evening",
-    "afternoon", "okay", "ok", "fine", "good", "hello", "hi", "hey", "thanks",
-    "thankyou", "thank", "please"
-}
-
-def _extract_claimed_name(text: str) -> Tuple[Optional[str], bool]:
-    """
-    Returns (name, strong_intent).
-    strong_intent=True only for 'my name is' / 'call me'.
-    For 'I'm'/'I am'/'This is', accept only if it looks like a proper name.
-    """
+def _extract_name_from_text(text: str) -> Optional[str]:
     t = (text or "").strip()
-
-    # Strong intent -> allowed to create a new label
-    m = re.search(r"\b(?:my name is|call me)\s+([A-Za-z][A-Za-z\-']{1,30})\b", t, flags=re.I)
+    m = re.search(r"\b(i am|i'm|this is|my name is|call me)\s+([A-Za-z][A-Za-z\-']{1,30})\b", t, flags=re.I)
     if m:
-        tok = m.group(1).strip()
-        low = tok.lower()
-        if low not in _NAME_STOPWORDS and not low.endswith("ing"):
-            return tok.title(), True
-
-    # Soft intent -> only accept if it *looks* like a proper name (Title-case helps)
-    m = re.search(r"\b(?:i am|i'm|this is)\s+([A-Za-z][A-Za-z\-']{1,30})\b", t, flags=re.I)
-    if m:
-        tok = m.group(1).strip()
-        low = tok.lower()
-        if low not in _NAME_STOPWORDS and not low.endswith("ing") and tok[:1].isalpha():
-            if tok[:1].isupper():
-                return tok.title(), False
-
-    return None, False
-# -------------------------------------------------------------------------------
+        return m.group(2).strip().title()
+    return None
 
 
 def _unique_ints(seq):
@@ -122,22 +95,14 @@ def _unique_ints(seq):
 
 
 def _open_stream_with_callback(device: Optional[int], preferred_sr: int, frame_ms: int):
-    """
-    Try a few (samplerate, dtype, channels) combos.
-    Use a callback that pushes float32 mono frames into a Queue (non-blocking).
-    """
     q = queue.Queue(maxsize=64)
 
     def make_cb(channels: int):
         def _cb(indata, frames, time_info, status):
-            if status:
-                # drop status prints to keep console clean
-                pass
             try:
                 x = indata[:, 0] if indata.ndim > 1 else indata
                 q.put_nowait(x.astype(np.float32, copy=False).copy())
             except queue.Full:
-                # drop if we're behind
                 pass
         return _cb
 
@@ -181,7 +146,7 @@ def _open_stream_with_callback(device: Optional[int], preferred_sr: int, frame_m
                 stream = sd.InputStream(
                     samplerate=sr,
                     device=device if device is not None else None,
-                    blocksize=0,  # let backend choose
+                    blocksize=0,
                     dtype=cfg["dtype"],
                     channels=cfg["channels"],
                     callback=make_cb(cfg["channels"]),
@@ -197,10 +162,6 @@ def _open_stream_with_callback(device: Optional[int], preferred_sr: int, frame_m
 
 
 def _gather(q: "queue.Queue[np.ndarray]", needed: int, timeout_s: float) -> np.ndarray:
-    """
-    Non-blocking gather: pull samples from the queue until we have 'needed'
-    or timeout. Returns float32 mono.
-    """
     chunks: List[np.ndarray] = []
     got, t0 = 0, time.time()
     while got < needed and (time.time() - t0) < timeout_s and _running:
@@ -215,6 +176,16 @@ def _gather(q: "queue.Queue[np.ndarray]", needed: int, timeout_s: float) -> np.n
     return np.concatenate(chunks, axis=0)
 
 
+def _safe_label_from_enroll(spk, claimed: str, wav_path: Path) -> str:
+    try:
+        ret = spk.enroll(claimed, wav_path)
+        if isinstance(ret, str) and ret.strip():
+            return ret.strip().title()
+        return claimed.title()
+    except Exception:
+        return claimed.title()
+
+
 def realtime_loop(
     device: Optional[int],
     samplerate: int,
@@ -225,8 +196,51 @@ def realtime_loop(
     rms_silence_mult: float,
     play_audio: bool,
     use_spkid: bool,
+    speaker_db: Optional[Path],
+    list_only: bool,
+    reset_only: bool,
+    spk_threshold: float,
+    spk_margin: float,
+    mem_turns: int,
 ) -> None:
     cfg = load_config()
+
+    # Per-speaker memory
+    memory = SpeakerMemory(max_turns=mem_turns)
+
+    # Speaker-ID (with persistence wired correctly)
+    spk = None
+    if use_spkid:
+        if SpeakerID is None:
+            _flush("[ID] SpeakerID unavailable; running without")
+            use_spkid = False
+        else:
+            _flush("[ID] Initializing SpeakerID backend…")
+            spk = SpeakerID(
+                sample_rate=16000,
+                threshold=spk_threshold,
+                margin=spk_margin,
+                db_path=speaker_db,         # << ensure save/load go to the same file
+            )
+            _flush(f"[ID] SpeakerID backend: {getattr(spk, 'mode', 'unknown')}")
+
+            # list/reset modes happen before we open the stream
+            if list_only:
+                spk.load()  # load current DB
+                labs = spk.labels()
+                if labs:
+                    _flush("[ID] Speakers:")
+                    for l in labs:
+                        _flush(f"  - {l}")
+                else:
+                    _flush("[ID] No speakers in DB.")
+                return
+
+            if reset_only:
+                spk.reset()
+                spk.save()
+                _flush("[ID] Speaker DB reset.")
+                return
 
     _flush("[Live] Opening stream…")
     stream, q, used_sr, frame_samples = _open_stream_with_callback(device, samplerate, frame_ms)
@@ -235,20 +249,9 @@ def realtime_loop(
     _flush("[Live] Calibrating noise floor…")
     need_calib = max(1, int(used_sr * calibration_sec))
     calib = _gather(q, needed=need_calib, timeout_s=calibration_sec + 0.8)
-    noise_rms = rms(calib) if calib.size else 0.0004  # tiny absolute fallback
+    noise_rms = rms(calib) if calib.size else 0.0004
     silence_thresh = max(0.0004, noise_rms * rms_silence_mult)
     _flush(f"[Live] Noise RMS≈{noise_rms:.4f} → silence threshold≈{silence_thresh:.4f}")
-
-    # Optional speaker-ID
-    spk = None
-    if use_spkid:
-        if SpeakerID is None:
-            _flush("[ID] SpeakerID unavailable; running without")
-            use_spkid = False
-        else:
-            # Threshold tuned low enough to reuse voices (you can adjust to 0.55–0.70)
-            spk = SpeakerID(threshold=0.60, margin=0.08, sample_rate=16000)
-            _flush(f"[ID] SpeakerID backend: {spk.mode}")
 
     end_silence_frames = max(1, end_silence_ms // frame_ms)
     in_speech = False
@@ -294,68 +297,57 @@ def realtime_loop(
             text = (transcribe_file(str(wav_path)) or "").strip()
             _flush(f"[Live] You said: {text or '[empty]'}")
 
-            # Speaker label (opt-in) — robust flow:
-            # 1) If claim exists, we try to map to an existing label; otherwise, allow strong-claim enroll.
-            # 2) If no claim, try identify; if <threshold, auto-enroll Guest-N.
-            label = None
+            # Speaker label (opt-in)
+            label: Optional[str] = None
+            sim = 0.0
             if use_spkid and spk is not None:
-                claimed, strong = _extract_claimed_name(text)
-
+                claimed = _extract_name_from_text(text)
                 if claimed:
-                    # If an existing label has a close textual name, keep it tidy
-                    maybe = spk.best_label_for_name(claimed, min_ratio=0.88 if strong else 0.90)
-                    if maybe and maybe != claimed.title():
-                        spk.rename(maybe, claimed.title())
-
-                    # Try voice match first
-                    id_label, sim = spk.identify(wav_path)
-                    if id_label is not None:
-                        label = id_label
-                        spk.add_sample_to(label, wav_path)  # tighten centroid
-                        # If strong claim and label is a Guest, rename to claimed
-                        if strong and label.startswith("Guest-"):
-                            spk.rename(label, claimed.title())
-                            label = claimed.title()
-                    else:
-                        # No good voice match
-                        if strong:
-                            spk.enroll(claimed, wav_path)
-                            label = claimed.title()
-                        else:
-                            # soft claim, no good voice → treat as unknown voice
-                            label = spk.auto_enroll_guest(wav_path)
+                    label = _safe_label_from_enroll(spk, claimed, wav_path)
+                    sim = 1.0
+                    spk.save()  # persist add/update
                 else:
-                    # No claim → pure voice ID
-                    id_label, sim = spk.identify(wav_path)
-                    if id_label is not None:
-                        label = id_label
-                        spk.add_sample_to(label, wav_path)
-                    else:
-                        label = spk.auto_enroll_guest(wav_path)
+                    lab, s = spk.identify(wav_path)
+                    label, sim = (lab, float(s))
+                    spk.save()  # persist centroid updates / guest minting
+                _flush(f"[ID] Labeled: {label or 'Unknown'} (sim={sim:.2f})")
 
-                _flush(f"[ID] Labeled: {label or 'Unknown'}")
-
-            # LLM (speaker-aware if we have a label)
+            # LLM (speaker-aware with per-speaker memory)
             _flush("[Live] Thinking…")
             base_prompt = cfg.get("llm", {}).get(
                 "base_system_prompt",
-                "You are a helpful, concise speech agent. Keep answers under 2 sentences.",
+                "You are a concise, helpful multi-party assistant. Keep replies to 1–3 sentences. "
+                "Keep each thread separate; do not mix details across speakers.",
             )
             model_name = cfg.get("llm", {}).get("model", "gpt-3.5-turbo")
 
-            system_prompt = base_prompt
             if label:
-                system_prompt = (
-                    base_prompt.strip()
-                    + f"\nAddress the person named {label} directly. "
-                      "Do not speculate about other participants."
-                )
+                history = memory.format_for_prompt(label)
+                if history and history != "None":
+                    system_prompt = (
+                        base_prompt.strip()
+                        + f"\nAddress the person named {label} directly."
+                        + f"\nRecent context for {label}:\n{history}"
+                    )
+                else:
+                    system_prompt = base_prompt.strip() + f"\nAddress the person named {label} directly."
+            else:
+                system_prompt = base_prompt
 
             reply = (generate_response(text, system_prompt=system_prompt, model_name=model_name) or "").strip()
             if label and not reply.lower().startswith(label.lower()):
                 reply = f"{label}, {reply}"
 
             _flush(f"[Live] Agent{(' → ' + label) if label else ''}: {reply or '[empty]'}")
+
+            # Persist reply text (useful for corpus)
+            try:
+                (SESSION_DIR / f"utter_{ts}_reply.txt").write_text(reply or "", encoding="utf-8")
+            except Exception:
+                pass
+
+            # Update per-speaker memory AFTER replying
+            memory.add(label or "Unknown", user_text=text, agent_text=reply or "")
 
             # TTS (pause stream to avoid feedback)
             stream.stop()
@@ -369,11 +361,19 @@ def realtime_loop(
                     voice_id=voice_id,
                     model_id=model_id,
                 )
+                res = speak_text(
+                    reply,
+                    save_to=SESSION_DIR / f"utter_{ts}_reply.mp3",
+                    play=play_audio,
+                    voice_id=voice_id,
+                    model_id=model_id,
+                )
+                if res and res.get("note"):
+                    _flush(f"[TTS] {res['note']}")
             except Exception as e:
                 _flush(f"[Live] TTS error (continuing): {e}")
             finally:
                 try:
-                    # drain any backlog and resume
                     _ = _gather(q, needed=frame_samples * 2, timeout_s=0.2)
                     stream.start()
                 except Exception as e:
@@ -402,7 +402,15 @@ def parse_args():
     p.add_argument("--max-utterance-sec", type=int, default=DEFAULT_MAX_UTTERANCE_SEC, help="Max utterance length (sec)")
     p.add_argument("--calibration-sec", type=float, default=DEFAULT_CALIBRATION_SEC, help="Calibration duration (sec)")
     p.add_argument("--no-play", action="store_true", help="Do not play audio aloud (still saves reply mp3)")
-    p.add_argument("--spk-id", action="store_true", help="Enable speaker labeling via embeddings (Resemblyzer)")
+    p.add_argument("--spk-id", action="store_true", help="Enable speaker labeling via embeddings")
+    # Persistence controls
+    p.add_argument("--speaker-db", type=Path, default=Path("data/speakers/default.npz"), help="Path to speaker DB (NPZ)")
+    p.add_argument("--list-speakers", action="store_true", help="List speakers in DB and exit")
+    p.add_argument("--reset-speakers", action="store_true", help="Reset/clear the speaker DB and exit")
+    # Speaker-ID tuning + memory
+    p.add_argument("--spk-threshold", type=float, default=0.82, help="Similarity threshold for a match")
+    p.add_argument("--spk-margin", type=float, default=0.08, help="Temporal smoothing margin below threshold")
+    p.add_argument("--mem-turns", type=int, default=3, help="How many recent turns to keep per speaker")
     return p.parse_args()
 
 
@@ -419,6 +427,12 @@ if __name__ == "__main__":
             rms_silence_mult=DEFAULT_RMS_SILENCE_MULT,
             play_audio=not args.no_play,
             use_spkid=bool(args.spk_id),
+            speaker_db=args.speaker_db,
+            list_only=bool(args.list_speakers),
+            reset_only=bool(args.reset_speakers),
+            spk_threshold=args.spk_threshold,
+            spk_margin=args.spk_margin,
+            mem_turns=args.mem_turns,
         )
     except KeyboardInterrupt:
         print("\n[Live] Exiting.")

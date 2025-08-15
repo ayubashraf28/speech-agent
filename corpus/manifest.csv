@@ -1,0 +1,16 @@
+utt_id,orig_path,export_path,duration_sec,rms,transcript,claimed_name,pred_label,pred_sim
+utter_2025-08-15_10-00-25,data\live\utter_2025-08-15_10-00-25.wav,audio\utter_2025-08-15_10-00-25.flac,4.980,0.006821,but tell me how many people will be able to play a game of chess at once.,,Ryan,0.9585
+utter_2025-08-15_10-00-39,data\live\utter_2025-08-15_10-00-39.wav,audio\utter_2025-08-15_10-00-39.flac,3.860,0.014937,Why are there two different colors pieces in the game?,,Ryan,0.9003
+utter_2025-08-15_12-45-30,data\live\utter_2025-08-15_12-45-30.wav,audio\utter_2025-08-15_12-45-30.flac,7.000,0.002883,"Hi, my name is Alex. I want your help to settle down to my monthly subs.",Alex,Alice,0.8834
+utter_2025-08-15_12-46-06,data\live\utter_2025-08-15_12-46-06.wav,audio\utter_2025-08-15_12-46-06.flac,7.320,0.023999,"Hi, my name is Alice. I want your help for setting up a plan to make my thesis.",Alice,Alice,0.9658
+utter_2025-08-15_12-47-02,data\live\utter_2025-08-15_12-47-02.wav,audio\utter_2025-08-15_12-47-02.flac,5.720,0.009253,My name is Ryan. I am interested in learning how to play chess.,Ryan,Ryan,0.9316
+utter_2025-08-15_12-47-19,data\live\utter_2025-08-15_12-47-19.wav,audio\utter_2025-08-15_12-47-19.flac,5.200,0.013973,What is the most important part of the thesis that I should keep in mind?,,Alice,0.9575
+utter_2025-08-15_12-47-33,data\live\utter_2025-08-15_12-47-33.wav,audio\utter_2025-08-15_12-47-33.flac,4.960,0.007781,Can you tell me how many people will be able to play a game of chess at once?,,Ryan,0.9564
+utter_2025-08-15_12-47-48,data\live\utter_2025-08-15_12-47-48.wav,audio\utter_2025-08-15_12-47-48.flac,4.660,0.014624,My pieces is about the extent of endangered species.,,Alice,0.9252
+utter_2025-08-15_12-48-04,data\live\utter_2025-08-15_12-48-04.wav,audio\utter_2025-08-15_12-48-04.flac,3.780,0.008880,I are there two different colors pieces in the game.,,Ryan,0.9299
+utter_2025-08-15_12-56-13,data\live\utter_2025-08-15_12-56-13.wav,audio\utter_2025-08-15_12-56-13.flac,7.220,0.018098,"Hi, my name is Alice. I want your help for setting up a plan to make my thesis.",Alice,Alice,0.9775
+utter_2025-08-15_12-56-26,data\live\utter_2025-08-15_12-56-26.wav,audio\utter_2025-08-15_12-56-26.flac,6.280,0.007853,My name is Ryan. I am interested in learning how to play chess.,Ryan,Ryan,0.9547
+utter_2025-08-15_12-56-39,data\live\utter_2025-08-15_12-56-39.wav,audio\utter_2025-08-15_12-56-39.flac,5.220,0.011826,What is the most important part of the thesis that I should keep in mind?,,Alice,0.9669
+utter_2025-08-15_12-56-53,data\live\utter_2025-08-15_12-56-53.wav,audio\utter_2025-08-15_12-56-53.flac,4.960,0.005909,Can you tell me how many people will be able to play a game of chess at once?,,Ryan,0.9569
+utter_2025-08-15_12-57-05,data\live\utter_2025-08-15_12-57-05.wav,audio\utter_2025-08-15_12-57-05.flac,4.680,0.013952,My thesis is about the extent of endangered species.,,Alice,0.9404
+utter_2025-08-15_12-57-17,data\live\utter_2025-08-15_12-57-17.wav,audio\utter_2025-08-15_12-57-17.flac,4.860,0.006880,Why are there two different colors pieces in the game?,,Ryan,0.9300
